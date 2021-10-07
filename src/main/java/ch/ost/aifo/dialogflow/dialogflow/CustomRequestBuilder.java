@@ -14,9 +14,18 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 public class CustomRequestBuilder {
+	private String projectId;
+	private String sessionId;
+	private TextInput.Builder textInput;
+	
+	public CustomRequestBuilder(String projectId, String sessionId, String languageCode) {
+		this.projectId = projectId;
+		this.sessionId = sessionId;
+		textInput = TextInput.newBuilder().setLanguageCode(languageCode);
+	}
 
-	// same as template
-	public static void detectIntentTexts(String projectId, String text, String sessionId, String languageCode) throws IOException, ApiException {
+
+	public void detectIntentTexts(String text) throws IOException, ApiException {
 		// Instantiates a client
 		try (SessionsClient sessionsClient = SessionsClient.create()) {
 			// Set the session name using the sessionId (UUID) and projectID (my-project-id)
@@ -24,9 +33,7 @@ public class CustomRequestBuilder {
 			System.out.println("Session Path: " + session.toString());
 
 			// Detect intents for each text input
-
-			// Set the text (hello) and language code (en-US) for the query
-			TextInput.Builder textInput = TextInput.newBuilder().setText(text).setLanguageCode(languageCode);
+			textInput.setText(text);
 
 			// Build the query with the TextInput
 			QueryInput queryInput = QueryInput.newBuilder().setText(textInput).build();

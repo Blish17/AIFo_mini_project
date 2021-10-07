@@ -7,6 +7,8 @@ import ch.ost.aifo.dialogflow.dialogflow.CustomRequestBuilder;
 
 public class Terminal {
 	public static void main(String[] args) {
+		CustomRequestBuilder requestBuilder = new CustomRequestBuilder("todolist-wsvc", "abcde", "en-US");
+		
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		try {
 			System.out.println("Hello, please enter a line for the client and confirm with enter. (Press q for quit.)");
@@ -19,7 +21,7 @@ public class Terminal {
 				if (line.equals("q")) { // quit the application
 					break;
 				}
-				CustomRequestBuilder.detectIntentTexts("todolist-wsvc", line, "abcde", "en-US");
+				requestBuilder.detectIntentTexts(line);
 			}
 			System.out.println("Goodbye");
 		} catch (IOException e) {
