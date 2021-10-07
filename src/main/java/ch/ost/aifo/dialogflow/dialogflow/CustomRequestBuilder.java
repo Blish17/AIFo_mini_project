@@ -39,6 +39,7 @@ public class CustomRequestBuilder {
 
 	private void fillProcessIntent() {
 		processIntent.put("task.add", todolist::addTask);
+		processIntent.put("task.remove", todolist::removeTask);
 	}
 	
 	private void fillAnswerIntent() {
