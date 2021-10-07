@@ -19,7 +19,7 @@ public class Terminal {
 				if (line.equals("q")) { // quit the application
 					break;
 				}
-				CustomRequestBuilder.detectIntentTexts("coffee-shop-xefm", line, "abcde", "en-US");
+				CustomRequestBuilder.detectIntentTexts("todolist-wsvc", line, "abcde", "en-US");
 			}
 			System.out.println("Goodbye");
 		} catch (IOException e) {
