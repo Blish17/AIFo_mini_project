@@ -14,14 +14,15 @@ public class Todolist {
 		
 	public void addTask(Map<String, Value> map) {
 		String name = map.get("task").getStringValue();
-		todolist.put(name, new Task(name));
-		System.out.println("I added \"" + name + "\" to your List");
+		String priority = map.get("priority").getStringValue();
+		todolist.put(name, new Task(name, priority));
+		System.out.println("I added \"" + name + "\" to your List with " + priority + " priority");
 	}
 	
 	public void printTasks() {
 		System.out.println("Here you go: ");
 		for (Task entry: todolist.values()) {
-			System.out.println(" - " + entry.getName());
+			System.out.println(" - " + entry.getName() + " ("+entry.getPriority()+")");
 		}
 	}
 	
