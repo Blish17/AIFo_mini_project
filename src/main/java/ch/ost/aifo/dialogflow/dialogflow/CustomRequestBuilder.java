@@ -23,8 +23,8 @@ public class CustomRequestBuilder {
 	private String projectId;
 	private String sessionId;
 	private TextInput.Builder textInput;
-	private Map<String, BiConsumer<String, Map<String, Value>>> processIntent;
-	private Map<String, Consumer<String>> answerIntent;
+	private Map<String, BiConsumer<Todolist, Map<String, Value>>> processIntent;
+	private Map<String, Consumer<Todolist>> answerIntent;
 	private TodolistManager todolistManager;
 	
 	public CustomRequestBuilder(String projectId, String sessionId, String languageCode) {
@@ -40,12 +40,12 @@ public class CustomRequestBuilder {
 
 
 	private void fillProcessIntent() {
-		processIntent.put("task.add", todolistManager::addTask);
-		processIntent.put("task.remove", todolistManager::removeTask);
+		processIntent.put("task.add", (todolist, map)-> todolist.addTask(map));
+		processIntent.put("task.remove", (todolist, map)-> todolist.removeTask(map));
 	}
 	
 	private void fillAnswerIntent() {
-		answerIntent.put("tasks.overview", todolistManager::printTasks);
+		answerIntent.put("tasks.overview", (todolist)-> todolist.printTasks());
 	}
 
 
@@ -69,19 +69,20 @@ public class CustomRequestBuilder {
 			
 			// own code
 			String intent = queryResult.getIntent().getDisplayName();
-			//TODO: get real list name
+			
+			
+			//TODO: use real list name instead of "default"
+			Todolist requestedList = todolistManager.getTodolist("default");
 			
 			if(answerIntent.containsKey(intent)) {
-				//TODO: use real list name
-				answerIntent.get(intent).accept("default");
+				answerIntent.get(intent).accept(requestedList);
 				return;
 			}
 			
 			if (processIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
 				Struct payload = queryResult.getFulfillmentMessagesOrBuilder(1).getPayload();
 				Map<String, Value> fieldsMap = payload.getFieldsMap();
-				//TODO: use real list name
-				processIntent.get(intent).accept("default", fieldsMap);
+				processIntent.get(intent).accept(requestedList, fieldsMap);
 				return;
 			}
 			

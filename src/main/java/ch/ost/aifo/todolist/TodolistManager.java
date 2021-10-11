@@ -13,18 +13,6 @@ public class TodolistManager {
 		createTodolist("default");
 	}
 	
-	public void addTask(String name, Map<String, Value> map) {
-		getTodolist(name).addTask(map);
-	}
-	
-	public void removeTask(String name, Map<String, Value> map) {
-		getTodolist(name).removeTask(map);
-	}
-	
-	public void printTasks(String name) {
-		getTodolist(name).printTasks();
-	}
-	
 	public Todolist createTodolist(String name) {
 		// TODO: handle name already exists
 		return todolists.put(name, new Todolist());
