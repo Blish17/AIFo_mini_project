@@ -31,4 +31,27 @@ public class TodolistManager {
 		}
 		return todolists.get("default");
 	}
+
+	public void removeTodolist(Map<String, Value> map) {
+		String name = map.get("list").getStringValue();
+		
+		if (name.equals("default")) {
+			System.out.println("The default list cannot be removed.");
+			return;
+		}
+		
+		Todolist removed = todolists.remove(name);
+		if (removed != null) {
+			System.out.println("I removed the list \"" + name + "\".");
+		} else {
+			System.out.println("I couldn't find a list with the name \"" + name + "\".");
+		}
+	}
+
+	public void printTodolists() {
+		System.out.println("Here you go: ");
+		for (String name: todolists.keySet()) {
+			System.out.println(" - " + name);
+		}
+	}
 }

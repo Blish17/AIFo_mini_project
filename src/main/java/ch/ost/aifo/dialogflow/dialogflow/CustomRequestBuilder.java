@@ -44,6 +44,8 @@ public class CustomRequestBuilder {
 	
 	private void fillProcessManageIntent() {
 		processManageIntent.put("list.add", (map)-> todolistManager.createTodolist(map));
+		processManageIntent.put("list.remove", (map)-> todolistManager.removeTodolist(map));
+		processManageIntent.put("lists.overview", (map)-> todolistManager.printTodolists());
 	}
 
 	private void fillProcessIntent() {
