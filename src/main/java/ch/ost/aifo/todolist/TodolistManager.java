@@ -14,15 +14,15 @@ public class TodolistManager {
 	}
 	
 	public void addTask(String name, Map<String, Value> map) {
-		todolists.get(name).addTask(map);
+		getTodolist(name).addTask(map);
 	}
 	
 	public void removeTask(String name, Map<String, Value> map) {
-		todolists.get(name).removeTask(map);
+		getTodolist(name).removeTask(map);
 	}
 	
 	public void printTasks(String name) {
-		todolists.get(name).printTasks();
+		getTodolist(name).printTasks();
 	}
 	
 	public Todolist createTodolist(String name) {
