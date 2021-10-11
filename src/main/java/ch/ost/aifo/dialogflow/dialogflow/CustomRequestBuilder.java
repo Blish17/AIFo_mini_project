@@ -23,6 +23,8 @@ public class CustomRequestBuilder {
 	private String projectId;
 	private String sessionId;
 	private TextInput.Builder textInput;
+	// TODO: rename processManageIntent, processIntent, answerIntent
+	private Map<String, Consumer<Map<String, Value>>> processManageIntent;
 	private Map<String, BiConsumer<Todolist, Map<String, Value>>> processIntent;
 	private Map<String, Consumer<Todolist>> answerIntent;
 	private TodolistManager todolistManager;
@@ -30,14 +32,19 @@ public class CustomRequestBuilder {
 	public CustomRequestBuilder(String projectId, String sessionId, String languageCode) {
 		this.projectId = projectId;
 		this.sessionId = sessionId;
-		textInput = TextInput.newBuilder().setLanguageCode(languageCode);
+		this.textInput = TextInput.newBuilder().setLanguageCode(languageCode);
 		this.todolistManager = new TodolistManager();
-		processIntent = new HashMap<>();
-		answerIntent = new HashMap<>();
+		this.processManageIntent = new HashMap<>();
+		this.processIntent = new HashMap<>();
+		this.answerIntent = new HashMap<>();
+		fillProcessManageIntent();
 		fillProcessIntent();
 		fillAnswerIntent();
 	}
-
+	
+	private void fillProcessManageIntent() {
+		processManageIntent.put("list.add", (map)-> todolistManager.createTodolist(map));
+	}
 
 	private void fillProcessIntent() {
 		processIntent.put("task.add", (todolist, map)-> todolist.addTask(map));
@@ -70,23 +77,37 @@ public class CustomRequestBuilder {
 			// own code
 			String intent = queryResult.getIntent().getDisplayName();
 			
+			if (queryResult.getFulfillmentMessagesCount() == 1) {
+				System.out.println("default answer: " + queryResult.getFulfillmentText());
+				return;
+			}
 			
-			//TODO: use real list name instead of "default"
-			Todolist requestedList = todolistManager.getTodolist("default");
+			Struct payload = queryResult.getFulfillmentMessagesOrBuilder(1).getPayload();
+			Map<String, Value> fieldsMap = payload.getFieldsMap();
 			
-			if(answerIntent.containsKey(intent)) {
+			// TODO: refactor processManageIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent
+			if (processManageIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
+				processManageIntent.get(intent).accept(fieldsMap);
+				return;
+			}
+			
+			String listName = fieldsMap.get("list").getStringValue();
+			Todolist requestedList = todolistManager.getTodolist(listName);
+			
+			if (requestedList == null) {
+				System.out.println("I couldn't find a todolist with the name \"" + listName + "\".");
+				return;
+			}
+			
+			if(answerIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
 				answerIntent.get(intent).accept(requestedList);
 				return;
 			}
 			
 			if (processIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
-				Struct payload = queryResult.getFulfillmentMessagesOrBuilder(1).getPayload();
-				Map<String, Value> fieldsMap = payload.getFieldsMap();
 				processIntent.get(intent).accept(requestedList, fieldsMap);
 				return;
 			}
-			
-			System.out.println("default answer: " + queryResult.getFulfillmentText());
 		}
 	}
 }
