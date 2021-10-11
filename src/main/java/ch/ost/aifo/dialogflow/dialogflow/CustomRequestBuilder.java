@@ -3,6 +3,7 @@ package ch.ost.aifo.dialogflow.dialogflow;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.google.api.gax.rpc.ApiException;
@@ -16,20 +17,21 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 import ch.ost.aifo.todolist.Todolist;
+import ch.ost.aifo.todolist.TodolistManager;
 
 public class CustomRequestBuilder {
 	private String projectId;
 	private String sessionId;
 	private TextInput.Builder textInput;
-	private Map<String, Consumer<Map<String, Value>>> processIntent;
-	private Map<String, Runnable> answerIntent;
-	private Todolist todolist;
+	private Map<String, BiConsumer<String, Map<String, Value>>> processIntent;
+	private Map<String, Consumer<String>> answerIntent;
+	private TodolistManager todolistManager;
 	
 	public CustomRequestBuilder(String projectId, String sessionId, String languageCode) {
 		this.projectId = projectId;
 		this.sessionId = sessionId;
 		textInput = TextInput.newBuilder().setLanguageCode(languageCode);
-		this.todolist = new Todolist();
+		this.todolistManager = new TodolistManager();
 		processIntent = new HashMap<>();
 		answerIntent = new HashMap<>();
 		fillProcessIntent();
@@ -38,12 +40,12 @@ public class CustomRequestBuilder {
 
 
 	private void fillProcessIntent() {
-		processIntent.put("task.add", todolist::addTask);
-		processIntent.put("task.remove", todolist::removeTask);
+		processIntent.put("task.add", todolistManager::addTask);
+		processIntent.put("task.remove", todolistManager::removeTask);
 	}
 	
 	private void fillAnswerIntent() {
-		answerIntent.put("tasks.overview", todolist::printTasks);
+		answerIntent.put("tasks.overview", todolistManager::printTasks);
 	}
 
 
@@ -67,16 +69,19 @@ public class CustomRequestBuilder {
 			
 			// own code
 			String intent = queryResult.getIntent().getDisplayName();
+			//TODO: get real list name
 			
 			if(answerIntent.containsKey(intent)) {
-				answerIntent.get(intent).run();
+				//TODO: use real list name
+				answerIntent.get(intent).accept("default");
 				return;
 			}
 			
 			if (processIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
 				Struct payload = queryResult.getFulfillmentMessagesOrBuilder(1).getPayload();
 				Map<String, Value> fieldsMap = payload.getFieldsMap();
-				processIntent.get(intent).accept(fieldsMap);
+				//TODO: use real list name
+				processIntent.get(intent).accept("default", fieldsMap);
 				return;
 			}
 			
