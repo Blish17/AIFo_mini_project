@@ -3,11 +3,22 @@ package ch.ost.aifo.dialogflow.main;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.LinkedList;
+import java.util.List;
+
+import com.example.dialogflow.EntityManagement;
+import com.example.dialogflow.IntentManagement;
+import com.google.api.gax.rpc.ApiException;
+
 import ch.ost.aifo.dialogflow.dialogflow.CustomRequestBuilder;
 
 public class Terminal {
-	public static void main(String[] args) {
-		CustomRequestBuilder requestBuilder = new CustomRequestBuilder("todolist-wsvc", "abcde", "en-US");
+	public static void main(String[] args) throws Exception {
+		String projectId = "todolist-wsvc";
+		String sessionId = "abcde";
+		String languageCode = "en-US";
+		
+		CustomRequestBuilder requestBuilder = new CustomRequestBuilder(projectId, sessionId, languageCode);
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		try {

@@ -162,3 +162,6 @@ $RECYCLE.BIN/
 
 
 # End of https://www.gitignore.io/api/git,java,maven,eclipse,windows
+src/main/java/ch/ost/aifo/dialogflow/main/TerminalPERSISTENT.java
+src/main/java/com/example/dialogflow/EntityManagement.java
+src/main/java/com/example/dialogflow/IntentManagement.java
