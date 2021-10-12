@@ -14,9 +14,12 @@ public class Todolist {
 	}
 		
 	public void addTask(Map<String, Value> map) {
-		//TODO: handle tasks with the same name
 		String name = map.get("task").getStringValue();
 		String priority = map.get("priority").getStringValue();
+		if (todolist.containsKey(name)) {
+			System.out.println("A task with this name exists already. Please create a new Task with a different name or edit this one.");
+			return;
+		}
 		todolist.put(name, new Task(name, priority));
 		System.out.println("I added \"" + name + "\" to your List with " + priority + " priority");
 	}
@@ -32,7 +35,10 @@ public class Todolist {
 	}
 	
 	public void printTasks() {
-		//TODO: handle empty list
+		if (todolist.isEmpty()) {
+			System.out.println("This list is empty");
+			return;
+		}
 		System.out.println("Here you go: ");
 		for (Task entry: todolist.values()) {
 			System.out.println(" - " + entry.getName() + " ("+entry.getPriority()+")");

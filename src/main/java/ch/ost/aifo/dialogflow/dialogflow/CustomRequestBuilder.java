@@ -16,34 +16,62 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 import ch.ost.aifo.todolist.Todolist;
+import ch.ost.aifo.todolist.TodolistManager;
+
+interface ThrowingConsumer<T> extends Consumer<T> {
+
+    @Override
+    default void accept(final T elem) {
+        try {
+            acceptThrows(elem);
+        } catch (Exception ex) {
+        	System.out.println(ex.getMessage());
+        }
+    }
+
+    void acceptThrows(T elem) throws Exception;
+
+}
 
 public class CustomRequestBuilder {
 	private String projectId;
 	private String sessionId;
 	private TextInput.Builder textInput;
-	private Map<String, Consumer<Map<String, Value>>> processIntent;
+	// TODO: rename answerIntent, processIntent
+	private Map<String, ThrowingConsumer<Map<String, Value>>> processIntent;
 	private Map<String, Runnable> answerIntent;
-	private Todolist todolist;
+	private TodolistManager todolistManager;
 	
 	public CustomRequestBuilder(String projectId, String sessionId, String languageCode) {
 		this.projectId = projectId;
 		this.sessionId = sessionId;
-		textInput = TextInput.newBuilder().setLanguageCode(languageCode);
-		this.todolist = new Todolist();
-		processIntent = new HashMap<>();
-		answerIntent = new HashMap<>();
+		this.textInput = TextInput.newBuilder().setLanguageCode(languageCode);
+		this.todolistManager = new TodolistManager();
+		this.processIntent = new HashMap<>();
+		this.answerIntent = new HashMap<>();
 		fillProcessIntent();
 		fillAnswerIntent();
 	}
-
-
+	
 	private void fillProcessIntent() {
-		processIntent.put("task.add", todolist::addTask);
-		processIntent.put("task.remove", todolist::removeTask);
+		processIntent.put("list.add", (map)-> todolistManager.createTodolist(map));
+		processIntent.put("list.remove", (map)-> todolistManager.removeTodolist(map));
+		processIntent.put("task.add", (map)-> getTodolist(map).addTask(map));
+		processIntent.put("task.remove", (map)-> getTodolist(map).removeTask(map));
+		processIntent.put("tasks.overview", (map)-> getTodolist(map).printTasks());
 	}
 	
 	private void fillAnswerIntent() {
-		answerIntent.put("tasks.overview", todolist::printTasks);
+		answerIntent.put("lists.overview", ()-> todolistManager.printTodolists());
+	}
+	
+	private Todolist getTodolist(Map<String, Value> fieldsMap) throws Exception {
+		String listName = fieldsMap.get("list").getStringValue();
+		Todolist requestedList = todolistManager.getTodolist(listName);
+		if (requestedList == null) {
+			throw new Exception("I couldn't find a todolist with the name \"" + listName + "\".");
+		}
+		return requestedList;
 	}
 
 
@@ -68,7 +96,8 @@ public class CustomRequestBuilder {
 			// own code
 			String intent = queryResult.getIntent().getDisplayName();
 			
-			if(answerIntent.containsKey(intent)) {
+			
+			if (answerIntent.containsKey(intent)) {
 				answerIntent.get(intent).run();
 				return;
 			}
@@ -76,11 +105,14 @@ public class CustomRequestBuilder {
 			if (processIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
 				Struct payload = queryResult.getFulfillmentMessagesOrBuilder(1).getPayload();
 				Map<String, Value> fieldsMap = payload.getFieldsMap();
+				
 				processIntent.get(intent).accept(fieldsMap);
 				return;
 			}
 			
-			System.out.println("default answer: " + queryResult.getFulfillmentText());
+			if (queryResult.getFulfillmentMessagesCount() == 1) {
+				System.out.println("default answer: " + queryResult.getFulfillmentText());
+			}
 		}
 	}
 }
