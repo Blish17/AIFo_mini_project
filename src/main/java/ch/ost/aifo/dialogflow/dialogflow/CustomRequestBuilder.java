@@ -3,7 +3,6 @@ package ch.ost.aifo.dialogflow.dialogflow;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.google.api.gax.rpc.ApiException;
@@ -19,14 +18,28 @@ import com.google.protobuf.Value;
 import ch.ost.aifo.todolist.Todolist;
 import ch.ost.aifo.todolist.TodolistManager;
 
+interface ThrowingConsumer<T> extends Consumer<T> {
+
+    @Override
+    default void accept(final T elem) {
+        try {
+            acceptThrows(elem);
+        } catch (Exception ex) {
+        	System.out.println(ex.getMessage());
+        }
+    }
+
+    void acceptThrows(T elem) throws Exception;
+
+}
+
 public class CustomRequestBuilder {
 	private String projectId;
 	private String sessionId;
 	private TextInput.Builder textInput;
-	// TODO: rename processManageIntent, processIntent, answerIntent
-	private Map<String, Consumer<Map<String, Value>>> processManageIntent;
-	private Map<String, BiConsumer<Todolist, Map<String, Value>>> processIntent;
-	private Map<String, Consumer<Todolist>> answerIntent;
+	// TODO: rename answerIntent, processIntent
+	private Map<String, ThrowingConsumer<Map<String, Value>>> processIntent;
+	private Map<String, Runnable> answerIntent;
 	private TodolistManager todolistManager;
 	
 	public CustomRequestBuilder(String projectId, String sessionId, String languageCode) {
@@ -34,27 +47,31 @@ public class CustomRequestBuilder {
 		this.sessionId = sessionId;
 		this.textInput = TextInput.newBuilder().setLanguageCode(languageCode);
 		this.todolistManager = new TodolistManager();
-		this.processManageIntent = new HashMap<>();
 		this.processIntent = new HashMap<>();
 		this.answerIntent = new HashMap<>();
-		fillProcessManageIntent();
 		fillProcessIntent();
 		fillAnswerIntent();
 	}
 	
-	private void fillProcessManageIntent() {
-		processManageIntent.put("list.add", (map)-> todolistManager.createTodolist(map));
-		processManageIntent.put("list.remove", (map)-> todolistManager.removeTodolist(map));
-		processManageIntent.put("lists.overview", (map)-> todolistManager.printTodolists());
-	}
-
 	private void fillProcessIntent() {
-		processIntent.put("task.add", (todolist, map)-> todolist.addTask(map));
-		processIntent.put("task.remove", (todolist, map)-> todolist.removeTask(map));
+		processIntent.put("list.add", (map)-> todolistManager.createTodolist(map));
+		processIntent.put("list.remove", (map)-> todolistManager.removeTodolist(map));
+		processIntent.put("task.add", (map)-> getTodolist(map).addTask(map));
+		processIntent.put("task.remove", (map)-> getTodolist(map).removeTask(map));
+		processIntent.put("tasks.overview", (map)-> getTodolist(map).printTasks());
 	}
 	
 	private void fillAnswerIntent() {
-		answerIntent.put("tasks.overview", (todolist)-> todolist.printTasks());
+		answerIntent.put("lists.overview", ()-> todolistManager.printTodolists());
+	}
+	
+	private Todolist getTodolist(Map<String, Value> fieldsMap) throws Exception {
+		String listName = fieldsMap.get("list").getStringValue();
+		Todolist requestedList = todolistManager.getTodolist(listName);
+		if (requestedList == null) {
+			throw new Exception("I couldn't find a todolist with the name \"" + listName + "\".");
+		}
+		return requestedList;
 	}
 
 
@@ -79,36 +96,22 @@ public class CustomRequestBuilder {
 			// own code
 			String intent = queryResult.getIntent().getDisplayName();
 			
-			if (queryResult.getFulfillmentMessagesCount() == 1) {
-				System.out.println("default answer: " + queryResult.getFulfillmentText());
-				return;
-			}
 			
-			Struct payload = queryResult.getFulfillmentMessagesOrBuilder(1).getPayload();
-			Map<String, Value> fieldsMap = payload.getFieldsMap();
-			
-			// TODO: refactor processManageIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent
-			if (processManageIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
-				processManageIntent.get(intent).accept(fieldsMap);
-				return;
-			}
-			
-			String listName = fieldsMap.get("list").getStringValue();
-			Todolist requestedList = todolistManager.getTodolist(listName);
-			
-			if (requestedList == null) {
-				System.out.println("I couldn't find a todolist with the name \"" + listName + "\".");
-				return;
-			}
-			
-			if(answerIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
-				answerIntent.get(intent).accept(requestedList);
+			if (answerIntent.containsKey(intent)) {
+				answerIntent.get(intent).run();
 				return;
 			}
 			
 			if (processIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
-				processIntent.get(intent).accept(requestedList, fieldsMap);
+				Struct payload = queryResult.getFulfillmentMessagesOrBuilder(1).getPayload();
+				Map<String, Value> fieldsMap = payload.getFieldsMap();
+				
+				processIntent.get(intent).accept(fieldsMap);
 				return;
+			}
+			
+			if (queryResult.getFulfillmentMessagesCount() == 1) {
+				System.out.println("default answer: " + queryResult.getFulfillmentText());
 			}
 		}
 	}
