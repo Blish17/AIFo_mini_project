@@ -29,7 +29,6 @@ public class Terminal {
 			}
 			System.out.println("Goodbye");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

@@ -37,9 +37,8 @@ public class CustomRequestBuilder {
 	private String projectId;
 	private String sessionId;
 	private TextInput.Builder textInput;
-	// TODO: rename answerIntent, processIntent
-	private Map<String, ThrowingConsumer<Map<String, Value>>> processIntent;
-	private Map<String, Runnable> answerIntent;
+	private Map<String, ThrowingConsumer<Map<String, Value>>> intentsWithPayload;
+	private Map<String, Runnable> intentsWithoutPayload;
 	private TodolistManager todolistManager;
 	
 	public CustomRequestBuilder(String projectId, String sessionId, String languageCode) {
@@ -47,22 +46,22 @@ public class CustomRequestBuilder {
 		this.sessionId = sessionId;
 		this.textInput = TextInput.newBuilder().setLanguageCode(languageCode);
 		this.todolistManager = new TodolistManager();
-		this.processIntent = new HashMap<>();
-		this.answerIntent = new HashMap<>();
-		fillProcessIntent();
-		fillAnswerIntent();
+		this.intentsWithPayload = new HashMap<>();
+		this.intentsWithoutPayload = new HashMap<>();
+		fillIntentsWithPayload();
+		fillIntentsWithoutPayload();
 	}
 	
-	private void fillProcessIntent() {
-		processIntent.put("list.add", (map)-> todolistManager.createTodolist(map));
-		processIntent.put("list.remove", (map)-> todolistManager.removeTodolist(map));
-		processIntent.put("task.add", (map)-> getTodolist(map).addTask(map));
-		processIntent.put("task.remove", (map)-> getTodolist(map).removeTask(map));
-		processIntent.put("tasks.overview", (map)-> getTodolist(map).printTasks());
+	private void fillIntentsWithPayload() {
+		intentsWithPayload.put("list.add", (map)-> todolistManager.createTodolist(map));
+		intentsWithPayload.put("list.remove", (map)-> todolistManager.removeTodolist(map));
+		intentsWithPayload.put("task.add", (map)-> getTodolist(map).addTask(map));
+		intentsWithPayload.put("task.remove", (map)-> getTodolist(map).removeTask(map));
+		intentsWithPayload.put("tasks.overview", (map)-> getTodolist(map).printTasks());
 	}
 	
-	private void fillAnswerIntent() {
-		answerIntent.put("lists.overview", ()-> todolistManager.printTodolists());
+	private void fillIntentsWithoutPayload() {
+		intentsWithoutPayload.put("lists.overview", ()-> todolistManager.printTodolists());
 	}
 	
 	private Todolist getTodolist(Map<String, Value> fieldsMap) throws Exception {
@@ -97,22 +96,20 @@ public class CustomRequestBuilder {
 			String intent = queryResult.getIntent().getDisplayName();
 			
 			
-			if (answerIntent.containsKey(intent)) {
-				answerIntent.get(intent).run();
+			if (intentsWithoutPayload.containsKey(intent)) {
+				intentsWithoutPayload.get(intent).run();
 				return;
 			}
 			
-			if (processIntent.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
+			if (intentsWithPayload.containsKey(intent) && queryResult.getAllRequiredParamsPresent()) {
 				Struct payload = queryResult.getFulfillmentMessagesOrBuilder(1).getPayload();
 				Map<String, Value> fieldsMap = payload.getFieldsMap();
 				
-				processIntent.get(intent).accept(fieldsMap);
+				intentsWithPayload.get(intent).accept(fieldsMap);
 				return;
 			}
 			
-			if (queryResult.getFulfillmentMessagesCount() == 1) {
-				System.out.println("default answer: " + queryResult.getFulfillmentText());
-			}
+			System.out.println(queryResult.getFulfillmentText());
 		}
 	}
 }
