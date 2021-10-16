@@ -1,6 +1,9 @@
 package ch.ost.aifo.todolist;
 
-public class Task {
+import java.io.Serializable;
+
+public class Task implements Serializable{
+	private static final long serialVersionUID = 1L;
 	private String name;
 	private String priority;
 	

@@ -1,5 +1,11 @@
 package ch.ost.aifo.todolist;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -9,8 +15,14 @@ public class TodolistManager {
 	private Hashtable<String, Todolist> todolists;
 	
 	public TodolistManager(){
-		todolists = new Hashtable<String, Todolist>();
-		todolists.put("default", new Todolist("default"));
+		try {
+			todolists = load();
+		} catch (Exception ex) {
+			System.out.println(ex);
+			todolists = new Hashtable<String, Todolist>();
+			todolists.put("default", new Todolist("default"));
+		}
+		registerOnClose();
 	}
 	
 	public void createTodolist(Map<String, Value> map) {
@@ -54,5 +66,34 @@ public class TodolistManager {
 		for (String name: todolists.keySet()) {
 			System.out.println(" - " + name);
 		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Hashtable<String, Todolist> load() throws ClassNotFoundException, IOException {
+		try (ObjectInputStream stream = new ObjectInputStream(new FileInputStream("saveFile.txt"))) {
+			return todolists = (Hashtable<String, Todolist>) stream.readObject();
+		}
+	}
+
+	public void save() {
+		try (ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream("saveFile.txt"))) {
+			stream.writeObject(todolists);
+			System.out.println("I saved your changes");
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	}
+	
+	public void registerOnClose() {
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+		    @Override
+		    public void run()
+		    {
+		    	save();
+		    	System.out.println("Goodbye");
+		    }
+		});
 	}
 }

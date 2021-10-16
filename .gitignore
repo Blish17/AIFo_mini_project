@@ -165,3 +165,4 @@ $RECYCLE.BIN/
 src/main/java/ch/ost/aifo/dialogflow/main/TerminalPERSISTENT.java
 src/main/java/com/example/dialogflow/EntityManagement.java
 src/main/java/com/example/dialogflow/IntentManagement.java
+saveFile.txt

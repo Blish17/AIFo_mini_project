@@ -27,7 +27,6 @@ public class Terminal {
 				}
 				requestBuilder.detectIntentTexts(line);
 			}
-			System.out.println("Goodbye");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
