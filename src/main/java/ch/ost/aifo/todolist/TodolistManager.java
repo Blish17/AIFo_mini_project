@@ -36,7 +36,8 @@ public class TodolistManager {
 		String name = map.get("list").getStringValue();
 		
 		if (name.equals("default")) {
-			System.out.println("The default list cannot be removed.");
+			todolists.put("default", new Todolist("default"));
+			System.out.println("I removed everything from the default list.");
 			return;
 		}
 		
