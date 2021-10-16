@@ -10,7 +10,7 @@ public class TodolistManager {
 	
 	public TodolistManager(){
 		todolists = new Hashtable<String, Todolist>();
-		todolists.put("default", new Todolist());
+		todolists.put("default", new Todolist("default"));
 	}
 	
 	public void createTodolist(Map<String, Value> map) {
@@ -20,7 +20,7 @@ public class TodolistManager {
 			System.out.println("A todolist with this name exists already.");
 			return;
 		}
-		todolists.put(name, new Todolist());
+		todolists.put(name, new Todolist(name));
 		System.out.println("I have created the new todolist: "+ name);
 	}
 	
