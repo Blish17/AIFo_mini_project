@@ -18,7 +18,6 @@ public class TodolistManager {
 		try {
 			todolists = load();
 		} catch (Exception ex) {
-			System.out.println(ex);
 			todolists = new Hashtable<String, Todolist>();
 			todolists.put("default", new Todolist("default"));
 		}
